@@ -58,6 +58,7 @@ pub mod imdb_scraper {
                 println!("{:?}", e);
                 return Err(String::from("Could not parse the IMDB response"))
             }
+            
         };
 
         let movie = ImdbMovie { name: String::from("Test Movie") };
