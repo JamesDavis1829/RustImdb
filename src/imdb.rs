@@ -1,40 +1,10 @@
 pub mod imdb_scraper {
-    // use rocket::serde::Deserialize;
-    // use rocket::serde::Serialize;
     use serde_json::Value;
 
     #[derive(Debug)]
     pub struct ImdbMovie {
         name: String
     }
-
-    // #[derive(Serialize, Deserialize, Debug)]
-    // #[allow(non_snake_case)]
-    // pub struct ImdbImageSearchResult {
-    //     height: i64,
-    //     imageUrl: String,
-    //     width: i64
-    // }
-
-    // #[derive(Serialize, Deserialize, Debug)]
-    // pub struct ImdbSearchResultEntry {
-    //     id: String,
-    //     l: String,
-    //     q: String,
-    //     rank: i64,
-    //     s: String,
-    //     i: ImdbImageSearchResult,
-    //     v: Vec<ImdbSearchResultEntry>,
-    //     vt: i64,
-    //     y: i64
-    // }
-
-    // #[derive(Serialize, Deserialize, Debug)]
-    // pub struct  ImdbSearchResults {
-    //     d: Vec<ImdbImageSearchResult>,
-    //     q: String,
-    //     v: i64
-    // }
 
     pub async fn search(term: String) -> Result<Value, String> {
         let changed_term = term.replace(" ", "_");
