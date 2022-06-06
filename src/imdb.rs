@@ -1,13 +1,17 @@
 pub mod imdb_scraper {
+    use rocket::http::private::SmallVec;
     use serde_json::Value;
     use serde::Serialize;
     use serde::Deserialize;
 
     use scraper::Html;
+    use scraper::Selector;
 
     #[derive(Debug, Serialize, Deserialize)]
     pub struct ImdbMovie {
-        name: String
+        name: String,
+        rating: i64,
+        plot: String
     }
 
     pub async fn search(term: String) -> Result<Value, String> {
@@ -58,10 +62,39 @@ pub mod imdb_scraper {
                 println!("{:?}", e);
                 return Err(String::from("Could not parse the IMDB response"))
             }
-            
         };
 
-        let movie = ImdbMovie { name: String::from("Test Movie") };
+        let movie = convert_imdb_html_to_movie(resp_text);
         Ok(movie)
+    }
+
+    fn convert_imdb_html_to_movie(html_document: String) -> ImdbMovie {
+        let document = Html::parse_document(html_document.as_str());
+
+        let title_selector = match Selector::parse("[data-testid=\"hero-title-block__title\"]") {
+            Ok(s) => s,
+            Err(_) => Selector { selectors: SmallVec::from_vec(vec! [])} 
+        };
+
+        let title = match document.select(&title_selector).next() {
+            Some(item) => item.inner_html(),
+            None => String::from(""),
+        };
+
+        let plot_selector = match Selector::parse("[data-testid=\"plot-l\"]") {
+            Ok(s) => s,
+            Err(_) => Selector { selectors: SmallVec::from_vec(vec! [])} 
+        };
+
+        let plot = match document.select(&plot_selector).next() {
+            Some(item) => item.inner_html(),
+            None => String::from(""),
+        };
+
+        ImdbMovie { 
+            name: title,
+            rating: 0,
+            plot: plot
+        }
     }
 }
