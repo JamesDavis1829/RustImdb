@@ -10,7 +10,7 @@ pub mod imdb_scraper {
     #[derive(Debug, Serialize, Deserialize)]
     pub struct ImdbMovie {
         name: String,
-        rating: i64,
+        rating: f32,
         plot: String
     }
 
@@ -71,30 +71,40 @@ pub mod imdb_scraper {
     fn convert_imdb_html_to_movie(html_document: String) -> ImdbMovie {
         let document = Html::parse_document(html_document.as_str());
 
-        let title_selector = match Selector::parse("[data-testid=\"hero-title-block__title\"]") {
-            Ok(s) => s,
-            Err(_) => Selector { selectors: SmallVec::from_vec(vec! [])} 
-        };
-
+        let title_selector = create_selector("[data-testid=\"hero-title-block__title\"]");
         let title = match document.select(&title_selector).next() {
             Some(item) => item.inner_html(),
             None => String::from(""),
         };
 
-        let plot_selector = match Selector::parse("[data-testid=\"plot-l\"]") {
-            Ok(s) => s,
-            Err(_) => Selector { selectors: SmallVec::from_vec(vec! [])} 
-        };
-
+        let plot_selector = create_selector("[data-testid=\"plot-l\"]");
         let plot = match document.select(&plot_selector).next() {
             Some(item) => item.inner_html(),
             None => String::from(""),
         };
 
+        let rating_selector = create_selector("[data-testid=\"hero-rating-bar__aggregate-rating__score\"] > span");
+        let rating = match document.select(&rating_selector).next() {
+            Some(item) => item.inner_html(),
+            None => String::from("")
+        };
+
+        let rating = match rating.parse::<f32>() {
+            Ok(num) => num,
+            Err(_) => 0.0
+        };
+
         ImdbMovie { 
             name: title,
-            rating: 0,
+            rating: rating,
             plot: plot
+        }
+    }
+
+    fn create_selector(pattern: &str) -> Selector {
+        return match Selector::parse(pattern) {
+            Ok(s) => s,
+            Err(_) => Selector { selectors: SmallVec::from_vec(vec! [])}
         }
     }
 }
