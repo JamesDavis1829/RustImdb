@@ -1,5 +1,6 @@
 pub mod imdb_scraper {
     use rocket::http::private::SmallVec;
+    use scraper::ElementRef;
     use serde_json::Value;
     use serde::Serialize;
     use serde::Deserialize;
@@ -10,8 +11,12 @@ pub mod imdb_scraper {
     #[derive(Debug, Serialize, Deserialize)]
     pub struct ImdbMovie {
         name: String,
-        rating: f32,
-        plot: String
+        user_rating: f32,
+        plot: String,
+        movie_type: String,
+        tv_rating: String,
+        release_year: i64,
+        runtime: String
     }
 
     #[derive(Debug, Serialize, Deserialize)]
@@ -116,6 +121,55 @@ pub mod imdb_scraper {
             None => String::from("")
         };
 
+        //Looks like it is always type -> release year -> rating -> runtime in hierarchy
+        let meta_data_selector = create_selector("[data-testid=\"hero-title-block__metadata\"] > li");
+        let meta_data_elements = document.select(&meta_data_selector);
+        let span_selector = create_selector("span");
+
+        let meta_data_elements:Vec<ElementRef> = meta_data_elements.collect();
+
+        let movie_type = match meta_data_elements.get(0) {
+            Some(val) => {
+                val.inner_html()
+            },
+            None => "".to_string()
+        };
+
+        let year = match meta_data_elements.get(1) {
+            Some(val) => {
+                match val.select(&span_selector).next() {
+                    Some(val) => {
+                        match val.inner_html().parse::<i64>() {
+                            Ok(num) => num,
+                            Err(_) => 0
+                        }
+                    },
+                    None => 0
+                }
+            },
+            None => 0
+        };
+
+        let tv_rating = match meta_data_elements.get(2) {
+            Some(val) => {
+                match val.select(&span_selector).next() {
+                    Some(val) => val.inner_html(),
+                    None => "N/A".to_string()
+                }
+            },
+            None => "N/A".to_string()
+        };
+
+        let runtime = match meta_data_elements.get(3) {
+            Some(val) => {
+                val.inner_html()
+                    .replace("<!--", "")
+                    .replace(" ", "")
+                    .replace("-->", "")
+            },
+            None => "".to_string()
+        };
+
         let rating = match rating.parse::<f32>() {
             Ok(num) => num,
             Err(_) => -1.0
@@ -123,8 +177,12 @@ pub mod imdb_scraper {
 
         ImdbMovie { 
             name: title,
-            rating: rating,
-            plot: plot
+            user_rating: rating,
+            plot: plot,
+            movie_type: movie_type,
+            release_year: year,
+            runtime,
+            tv_rating
         }
     }
 
