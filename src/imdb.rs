@@ -14,7 +14,29 @@ pub mod imdb_scraper {
         plot: String
     }
 
-    pub async fn search(term: String) -> Result<Value, String> {
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct ImdbSearchResultImage {
+        height: Option<i64>,
+        imageUrl: String,
+        width: Option<i64>
+    }
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct ImdbSearchResultEntry{
+        i: ImdbSearchResultImage,
+        id: String,
+        l: String,
+        s: String,
+        q: Option<String>,
+        rank: Option<i32>
+    }
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct ImdbSearchResults {
+        d: Vec<ImdbSearchResultEntry>
+    }
+
+    pub async fn search(term: String) -> Result<ImdbSearchResults, String> {
         let changed_term = term.replace(" ", "_");
         
         let first_term = match term.chars().nth(0) {
@@ -34,15 +56,20 @@ pub mod imdb_scraper {
             }
         };
 
-        let parsed = match resp.json::<Value>().await {
-            Ok(has_map) => has_map,
+        let parsed = match resp.json::<ImdbSearchResults>().await {
+            Ok(results) => results,
             Err(e) => {
                 println!("{:?}", e);
                 return Err(String::from("Parse failure."))
             }
         };
 
-        Ok(parsed)
+        //It appears that movies begin with IDs that have tt so filter so it's only movies and not like a "Top 10"
+        let filtered_results: Vec<ImdbSearchResultEntry> = parsed.d.into_iter().filter(|val| val.id.starts_with("tt")).collect();
+
+        Ok(ImdbSearchResults {
+            d: filtered_results
+        })
     }
 
     pub async fn get_movie_data(movie_id: String) -> Result<ImdbMovie, String> {
@@ -91,7 +118,7 @@ pub mod imdb_scraper {
 
         let rating = match rating.parse::<f32>() {
             Ok(num) => num,
-            Err(_) => 0.0
+            Err(_) => -1.0
         };
 
         ImdbMovie { 
