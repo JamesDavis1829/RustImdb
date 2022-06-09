@@ -128,6 +128,13 @@ pub mod imdb_scraper {
 
         let meta_data_elements:Vec<ElementRef> = meta_data_elements.collect();
 
+        //TODO: Change to regex with the following parameters
+        //year: >(\d\d\d\d)<
+        //rating: (PG|PG-13|R|G|TV-PG|TV-Y|TV-Y7|TV-Y7-FV|TV-G|TV-14|TV-MA)
+        //runtime_hour: (\d+<!-- -->h)
+        //runtime_minutes: (\d+<!-- -->m)
+
+
         let movie_type = match meta_data_elements.get(0) {
             Some(val) => {
                 val.inner_html()
